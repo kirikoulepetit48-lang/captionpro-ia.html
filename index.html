@@ -297,6 +297,7 @@
   </div>
 
   <button class="generate-btn" id="genBtn">Générer les légendes</button>
+  <button class="icon-btn" id="haveCodeBtn" style="width:100%; margin-top:10px; text-align:center;">🔑 J'ai déjà un code</button>
   <div class="status" id="status"></div>
 
   <div id="resultsWrap">
@@ -408,17 +409,89 @@ async function callPollinationsFallback(prompt){
   return text;
 }
 
-async function callAI(prompt){
+const GROQ_KEY_STORAGE = 'captionpro_groq_key';
+const WHATSAPP_NUMBER = '243979312394';
+
+function getGroqKey(){
+  return localStorage.getItem(GROQ_KEY_STORAGE);
+}
+function saveGroqKey(key){
+  localStorage.setItem(GROQ_KEY_STORAGE, key.trim());
+}
+function clearGroqKey(){
+  localStorage.removeItem(GROQ_KEY_STORAGE);
+}
+
+async function callGroq(prompt, apiKey){
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: 'Tu réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ou après, sans balises markdown.' },
+        { role: 'user', content: prompt }
+      ],
+      response_format: { type: 'json_object' }
+    })
+  });
+  if(res.status === 401 || res.status === 403){
+    clearGroqKey();
+    throw new Error('groq-invalid-key');
+  }
+  if(!res.ok){
+    const bodyText = await res.text().catch(() => '');
+    throw new Error(`HTTP ${res.status} — ${bodyText.slice(0, 150)}`);
+  }
+  const data = await res.json();
+  const content = data?.choices?.[0]?.message?.content;
+  if(!content) throw new Error('réponse Groq vide');
+  return content;
+}
+
+function openWhatsAppPaywall(topic, niche){
+  const msg = `Bonjour ! Je veux utiliser CaptionPro IA pour générer mes légendes (sujet: "${topic}", niche: ${niche}). Comment je fais pour obtenir mon code d'accès ?`;
+  const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+}
+
+function promptForGroqKey(){
+  const key = prompt("Colle ici le code que Raphaël t'a envoyé sur WhatsApp :");
+  if(key && key.trim()){
+    saveGroqKey(key);
+    return true;
+  }
+  return false;
+}
+
+async function callAI(prompt, topic, niche){
   try{
     return await callPuter(prompt);
   }catch(puterErr){
     console.warn('Puter indisponible, bascule sur Pollinations:', puterErr);
+  }
+  try{
+    return await callPollinationsFallback(prompt);
+  }catch(pollErr){
+    console.warn('Pollinations indisponible aussi:', pollErr);
+  }
+  const groqKey = getGroqKey();
+  if(groqKey){
     try{
-      return await callPollinationsFallback(prompt);
-    }catch(pollErr){
-      throw new Error('Puter et Pollinations ont échoué — ' + pollErr.message);
+      return await callGroq(prompt, groqKey);
+    }catch(groqErr){
+      if(groqErr.message === 'groq-invalid-key'){
+        openWhatsAppPaywall(topic, niche);
+        throw new Error("Ton code n'est plus valide — WhatsApp ouvert pour en obtenir un nouveau.");
+      }
+      throw groqErr;
     }
   }
+  openWhatsAppPaywall(topic, niche);
+  throw new Error('no-groq-key');
 }
 
 async function generateCaptions(){
@@ -443,20 +516,29 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, forma
 {"tiktok":{"caption":"...","hashtags":["tag1","tag2","tag3","tag4","tag5","tag6","tag7","tag8"]},"facebook":{"caption":"...","hashtags":["tag1","tag2","tag3","tag4","tag5","tag6","tag7","tag8"]}}`;
 
   try{
-    const rawText = await callAI(prompt);
+    const rawText = await callAI(prompt, topic, niche);
     const data = extractJson(rawText);
     if(!data.tiktok && !data.facebook) throw new Error('réponse incomplète');
     renderResults(data);
     statusEl.textContent = 'Légendes générées.';
   }catch(err){
     console.error('CaptionPro erreur:', err);
-    statusEl.textContent = 'Échec — ' + err.message;
+    if(err.message === 'no-groq-key'){
+      statusEl.innerHTML = "Accès requis — WhatsApp s'est ouvert. Une fois ton code reçu, appuie sur <u>J'ai déjà un code</u> ci-dessous.";
+    }else{
+      statusEl.textContent = 'Échec — ' + err.message;
+    }
   }finally{
     genBtn.disabled = false;
   }
 }
 
 genBtn.addEventListener('click', generateCaptions);
+document.getElementById('haveCodeBtn').addEventListener('click', () => {
+  if(promptForGroqKey()){
+    statusEl.textContent = 'Code enregistré. Appuie sur "Générer les légendes" pour réessayer.';
+  }
+});
 </script>
 
 </body>
