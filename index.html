@@ -467,11 +467,33 @@ function promptForGroqKey(){
   return false;
 }
 
+const PUTER_SKIP_UNTIL_KEY = 'puter_skip_until';
+
+// On sait que le quota Puter est épuisé aujourd'hui : on met en pause direct
+// dès le chargement pour ne jamais montrer le popup "Low Balance" au visiteur.
+if(!localStorage.getItem(PUTER_SKIP_UNTIL_KEY)){
+  localStorage.setItem(PUTER_SKIP_UNTIL_KEY, String(Date.now() + 30 * 24 * 60 * 60 * 1000));
+}
+
+function isPuterTemporarilySkipped(){
+  const until = localStorage.getItem(PUTER_SKIP_UNTIL_KEY);
+  return until && Date.now() < parseInt(until, 10);
+}
+function skipPuterFor24h(){
+  localStorage.setItem(PUTER_SKIP_UNTIL_KEY, String(Date.now() + 30 * 24 * 60 * 60 * 1000));
+}
+
 async function callAI(prompt, topic, niche){
-  try{
-    return await callPuter(prompt);
-  }catch(puterErr){
-    console.warn('Puter indisponible, bascule sur Pollinations:', puterErr);
+  if(!isPuterTemporarilySkipped()){
+    try{
+      const result = await callPuter(prompt);
+      return result;
+    }catch(puterErr){
+      console.warn('Puter indisponible (mis en pause 24h), bascule sur Pollinations:', puterErr);
+      skipPuterFor24h();
+    }
+  }else{
+    console.warn('Puter mis en pause (échec récent) — on saute direct à Pollinations.');
   }
   try{
     return await callPollinationsFallback(prompt);
@@ -542,4 +564,5 @@ document.getElementById('haveCodeBtn').addEventListener('click', () => {
 </script>
 
 </body>
-</html>
+  </html>
+  
