@@ -387,13 +387,38 @@ function renderResults(data){
 
 async function callPuter(prompt){
   if(typeof puter === 'undefined' || !puter.ai){
-    throw new Error("Puter.js ne s'est pas chargé — vérifie ta connexion et recharge la page.");
+    throw new Error('puter-unavailable');
   }
   const response = await puter.ai.chat(prompt, { model: 'gpt-5-nano' });
   if(typeof response === 'string') return response;
   if(response?.message?.content) return response.message.content;
   if(response?.toString) return response.toString();
   throw new Error('format de réponse Puter inattendu');
+}
+
+async function callPollinationsFallback(prompt){
+  const url = `https://text.pollinations.ai/${encodeURIComponent(prompt)}?model=openai&json=true`;
+  const res = await fetch(url);
+  if(!res.ok){
+    const bodyText = await res.text().catch(() => '');
+    throw new Error(`HTTP ${res.status} — ${bodyText.slice(0, 150)}`);
+  }
+  const text = await res.text();
+  if(!text || !text.trim()) throw new Error("réponse vide de l'API");
+  return text;
+}
+
+async function callAI(prompt){
+  try{
+    return await callPuter(prompt);
+  }catch(puterErr){
+    console.warn('Puter indisponible, bascule sur Pollinations:', puterErr);
+    try{
+      return await callPollinationsFallback(prompt);
+    }catch(pollErr){
+      throw new Error('Puter et Pollinations ont échoué — ' + pollErr.message);
+    }
+  }
 }
 
 async function generateCaptions(){
@@ -418,7 +443,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, forma
 {"tiktok":{"caption":"...","hashtags":["tag1","tag2","tag3","tag4","tag5","tag6","tag7","tag8"]},"facebook":{"caption":"...","hashtags":["tag1","tag2","tag3","tag4","tag5","tag6","tag7","tag8"]}}`;
 
   try{
-    const rawText = await callPuter(prompt);
+    const rawText = await callAI(prompt);
     const data = extractJson(rawText);
     if(!data.tiktok && !data.facebook) throw new Error('réponse incomplète');
     renderResults(data);
@@ -435,5 +460,4 @@ genBtn.addEventListener('click', generateCaptions);
 </script>
 
 </body>
-  </html>
-  
+</html>
