@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CaptionPro IA — Légendes & hashtags qui percent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://js.puter.com/v2/"></script>
+<style>
+  :root{
+    --ink:#15130F;
+    --panel:#1D1A14;
+    --panel-2:#252017;
+    --paper:#F3EEE2;
+    --muted:#A79E8C;
+    --amber:#FFB020;
+    --amber-dim:#8A621C;
+    --tiktok:#25F4EE;
+    --fb:#4C8BF5;
+    --line:#332C20;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -10%, rgba(255,176,32,0.10), transparent 60%),
+      var(--ink);
+    color:var(--paper);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+
+  header{
+    padding:22px 18px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  .eyebrow{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+    color:var(--muted);
+    letter-spacing:0.08em;
+    margin-bottom:14px;
+    text-transform:uppercase;
+  }
+  .eyebrow .dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--amber);
+    flex-shrink:0;
+  }
+  h1{
+    font-family:'Anton',sans-serif;
+    font-weight:400;
+    font-size:36px;
+    letter-spacing:0.01em;
+    line-height:0.95;
+    margin:0 0 6px;
+    text-transform:uppercase;
+  }
+  h1 span{color:var(--amber);}
+  .tagline{
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.5;
+    margin:0;
+    max-width:36ch;
+  }
+
+  main{padding:20px 18px;}
+  .field{margin-bottom:16px;}
+  label{
+    display:block;
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:8px;
+  }
+  textarea, input[type="text"]{
+    width:100%;
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--paper);
+    padding:13px 14px;
+    border-radius:4px;
+    font-family:'Inter',sans-serif;
+    font-size:15px;
+    resize:vertical;
+  }
+  textarea{min-height:90px;}
+  textarea:focus-visible, input[type="text"]:focus-visible{outline:2px solid var(--amber); outline-offset:2px;}
+  textarea::placeholder, input::placeholder{color:#6B6455;}
+
+  .niche-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:8px;
+  }
+  .niche-btn{
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--paper);
+    padding:12px 10px;
+    border-radius:4px;
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    text-align:left;
+    cursor:pointer;
+    transition:border-color 0.15s, background 0.15s;
+  }
+  .niche-btn:active{transform:scale(0.98);}
+  .niche-btn.active{
+    border-color:var(--amber);
+    background:var(--panel-2);
+    color:var(--amber);
+  }
+  .niche-btn:focus-visible{outline:2px solid var(--amber); outline-offset:2px;}
+
+  .tone-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+  }
+  .tone-btn{
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--paper);
+    padding:10px 8px;
+    border-radius:4px;
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    font-weight:600;
+    text-align:center;
+    cursor:pointer;
+  }
+  .tone-btn.active{
+    border-color:var(--amber);
+    background:var(--panel-2);
+    color:var(--amber);
+  }
+
+  .generate-btn{
+    width:100%;
+    background:var(--amber);
+    color:#1A1400;
+    border:none;
+    padding:16px;
+    border-radius:4px;
+    font-family:'Anton',sans-serif;
+    font-size:18px;
+    letter-spacing:0.02em;
+    text-transform:uppercase;
+    cursor:pointer;
+    margin-top:6px;
+    transition:filter 0.15s;
+  }
+  .generate-btn:active{filter:brightness(0.9); transform:scale(0.99);}
+  .generate-btn:disabled{opacity:0.5;}
+  .generate-btn:focus-visible{outline:2px solid var(--paper); outline-offset:2px;}
+
+  .status{
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+    color:var(--amber);
+    margin-top:14px;
+    text-align:center;
+    min-height:16px;
+  }
+
+  .results{
+    margin-top:24px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .platform-card{
+    position:relative;
+    background:var(--panel);
+    border:1px solid var(--line);
+    padding:20px 18px;
+    border-radius:6px;
+  }
+  .platform-head{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:12px;
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    font-weight:700;
+  }
+  .platform-head.tiktok{color:var(--tiktok);}
+  .platform-head.fb{color:var(--fb);}
+  .platform-dot{width:8px;height:8px;border-radius:50%;}
+  .platform-head.tiktok .platform-dot{background:var(--tiktok);}
+  .platform-head.fb .platform-dot{background:var(--fb);}
+
+  .caption-text{
+    font-size:15px;
+    line-height:1.55;
+    margin:0 0 12px;
+    white-space:pre-wrap;
+  }
+  .hashtags{
+    font-size:13px;
+    color:var(--amber);
+    line-height:1.6;
+    margin:0 0 14px;
+    word-break:break-word;
+  }
+  .card-actions{
+    display:flex;
+    gap:8px;
+  }
+  .icon-btn{
+    background:none;
+    border:1px solid var(--line);
+    color:var(--muted);
+    padding:8px 12px;
+    border-radius:4px;
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    transition:border-color 0.15s, color 0.15s;
+  }
+  .icon-btn:active{transform:scale(0.97);}
+  .icon-btn.copied{border-color:var(--amber); color:var(--amber);}
+  .icon-btn:focus-visible{outline:2px solid var(--amber); outline-offset:2px;}
+
+  .empty-state{
+    text-align:center;
+    padding:40px 20px;
+    color:var(--muted);
+    font-size:13px;
+    border:1px dashed var(--line);
+    border-radius:4px;
+    margin-top:24px;
+  }
+
+  footer{
+    text-align:center;
+    padding:24px 18px 10px;
+    color:#514A3B;
+    font-family:'Space Mono',monospace;
+    font-size:10px;
+    letter-spacing:0.08em;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">
+    <span class="dot"></span>
+    <span>LÉGENDES + HASHTAGS PRÊTS À COLLER</span>
+  </div>
+  <h1>Caption<span>Pro</span> IA</h1>
+  <p class="tagline">Décris ta vidéo une fois, reçois une légende optimisée pour TikTok et une pour Facebook, avec les hashtags qui vont bien.</p>
+</header>
+
+<main>
+  <div class="field">
+    <label for="topic">De quoi parle ta vidéo ?</label>
+    <textarea id="topic" placeholder="ex: visite d'un appartement 2 chambres à Lubumbashi, quartier Golf, disponible en location..."></textarea>
+  </div>
+
+  <div class="field">
+    <label>Niche</label>
+    <div class="niche-grid" id="nicheGrid">
+      <button class="niche-btn active" data-niche="Immobilier / visites de biens">🏠 Immobilier</button>
+      <button class="niche-btn" data-niche="Business et entrepreneuriat">💼 Business</button>
+      <button class="niche-btn" data-niche="Motivation et développement personnel">🔥 Motivation</button>
+      <button class="niche-btn" data-niche="Lifestyle et quotidien">✨ Lifestyle</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Ton</label>
+    <div class="tone-grid" id="toneGrid">
+      <button class="tone-btn active" data-tone="chaleureux et proche">Chaleureux</button>
+      <button class="tone-btn" data-tone="direct et professionnel">Pro</button>
+      <button class="tone-btn" data-tone="énergique et fun">Fun</button>
+    </div>
+  </div>
+
+  <button class="generate-btn" id="genBtn">Générer les légendes</button>
+  <div class="status" id="status"></div>
+
+  <div id="resultsWrap">
+    <div class="empty-state" id="emptyState">Tes légendes TikTok et Facebook apparaîtront ici, prêtes à copier.</div>
+    <div class="results" id="results"></div>
+  </div>
+</main>
+
+<footer>CAPTIONPRO IA — RAPH.MAN76</footer>
+
+<script>
+function setupToggle(selector){
+  const btns = document.querySelectorAll(selector);
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      btns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+}
+setupToggle('.niche-btn');
+setupToggle('.tone-btn');
+
+function getActive(selector){
+  return document.querySelector(selector + '.active').dataset;
+}
+
+const genBtn = document.getElementById('genBtn');
+const statusEl = document.getElementById('status');
+const resultsEl = document.getElementById('results');
+const emptyState = document.getElementById('emptyState');
+const topicInput = document.getElementById('topic');
+
+function extractJson(text){
+  const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if(start === -1 || end === -1) throw new Error('format inattendu: ' + cleaned.slice(0, 120));
+  return JSON.parse(cleaned.slice(start, end + 1));
+}
+
+function copyToClipboard(text, btn){
+  navigator.clipboard.writeText(text).then(() => {
+    const original = btn.textContent;
+    btn.textContent = 'Copié ✓';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = original;
+      btn.classList.remove('copied');
+    }, 1800);
+  });
+}
+
+function renderResults(data){
+  resultsEl.innerHTML = '';
+  emptyState.style.display = 'none';
+
+  const platforms = [
+    { key: 'tiktok', label: 'TikTok', cls: 'tiktok' },
+    { key: 'facebook', label: 'Facebook', cls: 'fb' }
+  ];
+
+  platforms.forEach(p => {
+    const entry = data[p.key];
+    if(!entry) return;
+    const card = document.createElement('div');
+    card.className = 'platform-card';
+    card.innerHTML = `
+      <div class="platform-head ${p.cls}"><span class="platform-dot"></span>${p.label}</div>
+      <p class="caption-text"></p>
+      <p class="hashtags"></p>
+      <div class="card-actions">
+        <button class="icon-btn copy-caption">Copier légende</button>
+        <button class="icon-btn copy-tags">Copier hashtags</button>
+        <button class="icon-btn copy-all">Copier tout</button>
+      </div>
+    `;
+    const captionText = entry.caption || '';
+    const tagsText = Array.isArray(entry.hashtags) ? entry.hashtags.map(t => t.startsWith('#') ? t : '#' + t).join(' ') : '';
+    card.querySelector('.caption-text').textContent = captionText;
+    card.querySelector('.hashtags').textContent = tagsText;
+    card.querySelector('.copy-caption').addEventListener('click', (e) => copyToClipboard(captionText, e.target));
+    card.querySelector('.copy-tags').addEventListener('click', (e) => copyToClipboard(tagsText, e.target));
+    card.querySelector('.copy-all').addEventListener('click', (e) => copyToClipboard(captionText + '\n\n' + tagsText, e.target));
+    resultsEl.appendChild(card);
+  });
+}
+
+async function callPuter(prompt){
+  if(typeof puter === 'undefined' || !puter.ai){
+    throw new Error("Puter.js ne s'est pas chargé — vérifie ta connexion et recharge la page.");
+  }
+  const response = await puter.ai.chat(prompt, { model: 'gpt-5-nano' });
+  if(typeof response === 'string') return response;
+  if(response?.message?.content) return response.message.content;
+  if(response?.toString) return response.toString();
+  throw new Error('format de réponse Puter inattendu');
+}
+
+async function generateCaptions(){
+  const topic = topicInput.value.trim();
+  if(!topic){
+    statusEl.textContent = "Décris d'abord ta vidéo.";
+    topicInput.focus();
+    return;
+  }
+
+  const niche = getActive('.niche-btn').niche;
+  const tone = getActive('.tone-btn').tone;
+
+  genBtn.disabled = true;
+  statusEl.textContent = 'Génération en cours...';
+
+  const prompt = `Tu es un expert en réseaux sociaux. Pour une vidéo sur le thème "${topic}", niche "${niche}", ton ${tone}, génère deux légendes distinctes et adaptées :
+1. Une légende TikTok : courte, percutante, avec un appel à l'action, en français.
+2. Une légende Facebook : un peu plus développée et descriptive, avec un appel à l'action clair, en français.
+Pour chaque plateforme, propose aussi 8 hashtags pertinents et efficaces (mélange de hashtags larges et de niche, sans le symbole # dans le JSON).
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, format exact:
+{"tiktok":{"caption":"...","hashtags":["tag1","tag2","tag3","tag4","tag5","tag6","tag7","tag8"]},"facebook":{"caption":"...","hashtags":["tag1","tag2","tag3","tag4","tag5","tag6","tag7","tag8"]}}`;
+
+  try{
+    const rawText = await callPuter(prompt);
+    const data = extractJson(rawText);
+    if(!data.tiktok && !data.facebook) throw new Error('réponse incomplète');
+    renderResults(data);
+    statusEl.textContent = 'Légendes générées.';
+  }catch(err){
+    console.error('CaptionPro erreur:', err);
+    statusEl.textContent = 'Échec — ' + err.message;
+  }finally{
+    genBtn.disabled = false;
+  }
+}
+
+genBtn.addEventListener('click', generateCaptions);
+</script>
+
+</body>
+  </html>
+  
